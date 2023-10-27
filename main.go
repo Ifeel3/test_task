@@ -26,16 +26,6 @@ func FindOperands(str string, operator rune) (string, string) {
 	return result[0], result[1]
 }
 
-func IsRim(str string) bool {
-	str = strings.ToUpper(str)
-	for _, val := range str {
-		if val != 'I' && val != 'V' && val != 'X' {
-			return false
-		}
-	}
-	return true
-}
-
 func Calc(op1, op2 string, op rune) (int, error) {
 	num1, err := strconv.Atoi(op1)
 	if err != nil {
@@ -62,37 +52,61 @@ func Calc(op1, op2 string, op rune) (int, error) {
 	return 0, errors.New("unknown error")
 }
 
+func RomanCalc(op1, op2 string, operator rune) (string, error) {
+	var result string
+	switch operator {
+	case '+':
+		result = ToRoman(FromRoman(op1) + FromRoman(op2))
+	case '-':
+		result = ToRoman(FromRoman(op1) - FromRoman(op2))
+	case '*':
+		result = ToRoman(FromRoman(op1) * FromRoman(op2))
+	case '/':
+		result = ToRoman(FromRoman(op1) / FromRoman(op2))
+	default:
+		return "", errors.New("unknown operator")
+	}
+	if result == "" {
+		return "", errors.New("zero result")
+	}
+	return result, nil
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Printf("Write operation: ")
-		str, err := reader.ReadString('\n')
+	fmt.Printf("Write operation: ")
+	str, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Printf("error: %s\n", err.Error())
+		return
+	}
+	op := FindOperator(str)
+	if op == '?' {
+		fmt.Printf("error: %s\n", "wrong operator")
+		return
+	}
+	operand1, operand2 := FindOperands(str, op)
+	if operand1 == "" || operand2 == "" {
+		fmt.Printf("error: %s\n", "wrong operand")
+		return
+	}
+	operand2 = strings.Trim(operand2, "\r\n")
+	if IsRoman(operand1) && IsRoman(operand2) {
+		result, err := RomanCalc(operand1, operand2, op)
 		if err != nil {
-			fmt.Printf("error: %s\n", err.Error())
-			continue
+			fmt.Printf("error: %s\n", err)
+			return
 		}
-		op := FindOperator(str)
-		if op == '?' {
-			fmt.Printf("error: %s\n", "wrong operator")
-			continue
+		fmt.Println(result)
+		return
+	} else if !IsRoman(operand1) && !IsRoman(operand2) {
+		result, err := Calc(operand1, operand2, op)
+		if err != nil {
+			fmt.Printf("error: %s\n", err)
+			return
 		}
-		operand1, operand2 := FindOperands(str, op)
-		if operand1 == "" || operand2 == "" {
-			fmt.Printf("error: %s\n", "wrong operator")
-			continue
-		}
-		operand2 = strings.Trim(operand2, "\r\n")
-		if IsRim(operand1) && IsRim(operand2) {
-			continue //TODO
-		} else if !IsRim(operand1) && !IsRim(operand2) {
-			result, err := Calc(operand1, operand2, op)
-			if err != nil {
-				fmt.Printf("error: %s\n", err)
-				continue
-			}
-			fmt.Printf("%d\n", result)
-		} else {
-			fmt.Printf("error: %s\n", "wrong operand")
-		}
+		fmt.Printf("%d\n", result)
+	} else {
+		fmt.Printf("error: %s\n", "wrong operand")
 	}
 }
